@@ -1,0 +1,39 @@
+# This is a sample file, edit to fit your needs
+# and put it in your project root directory
+
+# A JS bundle
+master.js:
+    files:
+        - js/lib/lib1.js
+        - js/morecode.js
+
+# A CSS bundle
+site.css:
+    files:
+        - css/layout.css
+        - css/colors.css
+        - css/typography.css
+
+# A bundle with just one file
+# It's not stupid, you may want
+# to pass it trought the compressor ;)
+js/settings.js:
+    files:
+        - js/settings.js
+
+# Which is equivalent to
+js/settings.js:
+
+# A bundle without extension
+bundle:
+    type: css
+    files:
+        - css/box.css
+        - css/circle.css
+
+# A CSS bundle with media="print"
+print_style.css:
+    media: print
+    files:
+        - css/hidebanners.css
+        - css/print_colors.css
