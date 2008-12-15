@@ -20,20 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from os.path import dirname, abspath, join
-from os import stat
-from time import sleep
-
 from django import template
-from django.conf import settings
 
-from bundles.libbundler import BundleManager, BUNDLES_URL
+from bundles.libbundler import BUNDLES_URL
+from bundles.manager import BundleManager
 
 register = template.Library()
 
-# Move to top project dir
-proj_dir = dirname(dirname(dirname(abspath(__file__))))
-MANAGER = BundleManager(proj_dir)
+MANAGER = BundleManager.manager()
 
 @register.simple_tag
 def bundle(value):

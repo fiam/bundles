@@ -21,14 +21,10 @@
 # THE SOFTWARE.
 
 import os
-import sys
 import re
-import time
 import yaml
-from urllib import basejoin
 from base64 import urlsafe_b64encode
 import hashlib
-from threading import Thread
 
 from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
@@ -142,6 +138,10 @@ class BaseBundle(object):
             return '%s.%s' % (self.name, self.hash())
 
         return '%s.%s.%s' % (name_parts[0], self.hash(), name_parts[1])
+
+    @property
+    def url(self):
+        return '%s/%s' % (BUNDLES_URL, self.get_bundle_name())
 
     def get_bundle_path(self):
         return os.path.join(settings.MEDIA_ROOT, 'bundles', self.bundle_name)
@@ -295,65 +295,4 @@ def get_bundles(base_dir):
 def rereference_bundles(bundles):
     for bundle in bundles.values():
         bundle.rereference(bundles)
-
-class BundleManager(object):
-    def __init__(self, base_dir):
-        self.base_dir = base_dir
-        self.build()
-        if settings.DEBUG:
-            BundleChecker(self).start()
-
-    def build(self):
-        self.bundles = get_bundles(self.base_dir)
-        rebuilt = []
-        for bundle in self.bundles.values():
-            if bundle.build():
-                rebuilt.append(bundle)
-        for bundle in rebuilt:
-            bundle.rereference(self.bundles)
-            bundle.compress()
-
-
-    def get(self, bundle):
-        try:
-            return self.bundles[bundle]
-        except KeyError:
-            raise BundleDoesNotExist('Bundle %s not found' % bundle)
-
-class BundleChecker(Thread):
-    def __init__(self, manager):
-        super(BundleChecker, self).__init__()
-        self.mtimes = {}
-        self.manager = manager
-        self.full_names = {}
-        self.conf_path = os.path.join(manager.base_dir, 'bundles.yaml')
-        for bundle in self.manager.bundles.values():
-            for fname in bundle.files:
-                full_name = settings.MEDIA_ROOT + fname
-                self.full_names[full_name] = fname
-                self.mtimes[full_name] = os.stat(full_name).st_mtime
-        self.conf_mtime = os.stat(self.conf_path)
-
-    def run(self):
-        while True:
-            for fname, value in self.mtimes.iteritems():
-                try:
-                    mtime = os.stat(fname).st_mtime
-                except OSError:
-                    continue
-                if value != mtime:
-                    self.mtimes[fname] = mtime
-                    for bundle in self.manager.bundles.values():
-                        if self.full_names[fname] in bundle.files:
-                            print 'Rebuilding bundle "%s"' % bundle.name
-                            bundle.rebuild()
-            try:
-                mtime = os.stat(self.conf_path).st_mtime
-            except OSError:
-                continue
-            if mtime != self.conf_mtime:
-                print 'Reloading bundles'
-                self.conf_mtime = mtime
-                self.manager.build()
-            time.sleep(1)
 
